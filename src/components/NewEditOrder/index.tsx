@@ -8,6 +8,7 @@ import Radio from "../Radio";
 import Select from "../Select";
 import schema from "./validator";
 import * as yup from "yup";
+import axios from "axios";
 
 const NewEditOrder = () => {
   const { orderId } = useParams();
@@ -21,8 +22,13 @@ const NewEditOrder = () => {
     fetch(`http://localhost:5006/api/orders/${orderId}`)
       .then((response) => response.json())
       .then((data) => {
+        formRef.current?.setFieldValue("crust", data.crust);
+        formRef.current?.setFieldValue("flavor", data.flavor);
+        formRef.current?.setFieldValue("size", data.size);
+        formRef.current?.setFieldValue("tableNo", data.tableNo);
+        formRef.current?.setFieldValue("id", data.id);
 
-       /**TODO: CARREGAR OS DADOS NO FORMULÁRIO */
+        console.log("Order", data);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -30,29 +36,46 @@ const NewEditOrder = () => {
   }, [orderId]);
 
   const submit = async (data: Order) => {
-    /**TODO: CHAMAR A VALIDAÇÃO E PASSAR OS ERROS PARA O FORM */
+    try {
+      await schema.validate(data, {
+        abortEarly: false,
+      });
+    } catch (error) {
+      console.log(error);
 
-    if(!data.id){
+      if (error instanceof yup.ValidationError) {
+        error.inner.forEach((error) => {
+          if (error.path) {
+            formRef.current?.setFieldError(error.path, error.message);
+          }
+        });
+      }
 
-      const newData = {...data, id: 0};
-      fetch("http://localhost:5006/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newData),
-      })
+      return;
+    }
+
+    if (!data.id) {
+      const newData = { ...data, id: 0 };
+
+      try {
+        await axios.post("http://localhost:5006/api/orders", newData);
+        navigate("/");
+      } catch (error) {
+        console.error("Error:", error);
+      }
+      
+    } else {
+      console.log("Atualização");
+
+      axios
+        .put(`http://localhost:5006/api/orders/${data.id}`, data)
         .then(() => {
           navigate("/");
         })
         .catch((error) => {
           console.error("Error:", error);
         });
-    }else{
-      console.log('Atualização')
     }
-
-    
   };
 
   const radioOptions = [

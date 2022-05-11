@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { Error, Order } from "../../server";
 import OrderItem from "./OrderItem";
@@ -10,10 +11,10 @@ function Orders() {
   useEffect(() => {
     //request
 
-    fetch("http://localhost:5006/api/orders")
-      .then((response) => response.json())
-      .then((data) => {
-        setItems(data);
+    axios
+      .get("http://localhost:5006/api/orders")
+      .then((response) => {
+        setItems(response.data);
         setIsLoaded(true);
       })
       .catch((error) => {
